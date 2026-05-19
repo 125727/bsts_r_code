@@ -317,12 +317,12 @@ legend("topright", legend = c("KDE", "N(0,1)", "Hist"),
        fill = c(NA, NA, "steelblue"), border = c(NA, NA, "white"),
        col = c("darkorange", "green3", NA), lwd = c(2, 2, NA), bty = "n", cex = 0.8)
 
-# --- Normal Q-Q (Квантиль-Квантиль) ---
+# Normal Q-Q (Квантиль-Квантиль)
 qqnorm(std_resids, main = "Normal Q-Q", pch = 16, col = "blue", 
        xlab = "Theoretical Quantiles", ylab = "Sample Quantiles")
 qqline(std_resids, col = "red", lwd = 2)
 
-# --- Коррелограмма (ACF) ---
+# Коррелограмма (ACF)
 acf(std_resids, main = "Correlogram", xlab = "Lag")
 
 
@@ -363,16 +363,10 @@ print(quality_metrics_df)
 
 
 
-
-
-
-# 1. Извлекаем внутреннюю модель BSTS 
 bsts_model <- impact3$model$bsts.model
 
-# 2. Получаем стандартизированную сводку по модели
 bsts_summary <- summary(bsts_model)
 
-# 3. Извлекаем матрицу с коэффициентами и преобразуем в data.frame
 coefficients_df <- as.data.frame(bsts_summary$coefficients)
 
 colnames(coefficients_df) <- c(
@@ -383,13 +377,10 @@ colnames(coefficients_df) <- c(
   "Вероятность включения"
 )
 
-print("--- Апостериорные оценки коэффициентов модели ---")
-print(coefficients_df)
+coefficients_df
 
 
 
-
------
   
   
 
@@ -558,17 +549,10 @@ quality_metrics_df <- data.frame(
 print(quality_metrics_df)
 
 
-
-
-
-
-# 1. Извлекаем внутреннюю модель BSTS 
 bsts_model6 <- impact6$model$bsts.model
 
-# 2. Получаем стандартизированную сводку по модели
 bsts_summary6 <- summary(bsts_model6)
 
-# 3. Извлекаем матрицу с коэффициентами и преобразуем в data.frame
 coefficients_df6 <- as.data.frame(bsts_summary6$coefficients)
 
 colnames(coefficients_df6) <- c(
@@ -578,83 +562,7 @@ colnames(coefficients_df6) <- c(
   "Условное SD", 
   "Вероятность включения"
 )
-
-print("--- Апостериорные оценки коэффициентов модели ---")
-print(coefficients_df6)
-
-
-
-
-
-# 1. Извлекаем остатки на пре-периоде и стандартизируем их
-actuals <- impact6$series$response
-preds <- impact6$series$point.pred
-resids_pre <- na.omit(window(actuals - preds, start = pre.period[1], end = pre.period[2]))
-
-# Стандартизация (как на графике Python: Standardized residual)
-std_resids <- resids_pre / sd(resids_pre)
-
-
-# =====================================================================
-# 2. ВЫВОД P-VALUE ТЕСТОВ
-# =====================================================================
-
-# Тест Дики-Фуллера (на стационарность)
-adf_result <- adf.test(std_resids, alternative = "stationary")
-cat(sprintf("p-value тест Дики-Фуллера = %f\n", adf_result$p.value))
-adf_result
-
-# Тест Стьюдента (на равенство среднего нулю)
-t_result <- t.test(std_resids, mu = 0)
-cat(sprintf("p-value тест Стьюдента = %f\n", t_result$p.value))
-t_result
-
-# Тест Льюнга-Бокса 
-lb_result <- Box.test(std_resids, type = "Ljung-Box")
-cat(sprintf("p-value тест Льюнга-Бокса = %f\n", lb_result1$p.value))
-lb_result
-
-
-# =====================================================================
-# 3. ПОСТРОЕНИЕ 4-ПАНЕЛЬНОГО ГРАФИКА (plot_diagnostics)
-# =====================================================================
-
-# Задаем сетку 2x2 для графиков
-# oma = c(2, 2, 2, 2) задает общую белую рамку вокруг всего рисунка
-# mar = c(4, 4, 3, 2) настраивает поля для каждого графика: 3 — это верхнее поле под название
-par(mfrow = c(2, 2), mar = c(4, 4, 3, 2), oma = c(2, 2, 2, 2))
-
-# --- Стандартизированные остатки во времени ---
-plot(std_resids, type = "l", col = "steelblue", lwd = 1.5,
-     main = "Standardized residual", ylab = "", xlab = "Date")
-abline(h = 0, col = "gray", lty = 1) # Линия нуля
-
-# --- Гистограмма и оценка плотности ---
-hist(std_resids, prob = TRUE, breaks = 15, col = "steelblue", border = "white",
-     main = "Histogram plus estimated density", xlab = "", ylab = "")
-# Оценка плотности (KDE) - оранжевая линия
-lines(density(std_resids), col = "darkorange", lwd = 2)
-# Теоретическое нормальное распределение N(0,1) - зеленая линия
-curve(dnorm(x, mean = 0, sd = 1), add = TRUE, col = "green3", lwd = 2)
-legend("topright", legend = c("KDE", "N(0,1)", "Hist"),
-       fill = c(NA, NA, "steelblue"), border = c(NA, NA, "white"),
-       col = c("darkorange", "green3", NA), lwd = c(2, 2, NA), bty = "n", cex = 0.8)
-
-# --- Normal Q-Q (Квантиль-Квантиль) ---
-qqnorm(std_resids, main = "Normal Q-Q", pch = 16, col = "blue", 
-       xlab = "Theoretical Quantiles", ylab = "Sample Quantiles")
-qqline(std_resids, col = "red", lwd = 2)
-
-# --- Коррелограмма (ACF) ---
-acf(std_resids, main = "Correlogram", xlab = "Lag")
-
-
-# Возвращаем стандартные настройки отображения (1 график на окно)
-par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, oma = c(0, 0, 0, 0))
-
-
-
-
+coefficients_df6
 
 
 
@@ -685,13 +593,11 @@ plot(impact7, metrics = c('original', 'pointwise'))
 
 
 
-# 1. Извлекаем внутреннюю модель BSTS 
+
 bsts_model5 <- impact5$model$bsts.model
 
-# 2. Получаем стандартизированную сводку по модели
 bsts_summary5 <- summary(bsts_model5)
 
-# 3. Извлекаем матрицу с коэффициентами и преобразуем в data.frame
 coefficients_df5 <- as.data.frame(bsts_summary5$coefficients)
 
 colnames(coefficients_df5) <- c(
@@ -702,8 +608,7 @@ colnames(coefficients_df5) <- c(
   "Вероятность включения"
 )
 
-print("--- Апостериорные оценки коэффициентов модели ---")
-print(coefficients_df5)
+coefficients_df5
 
   
   
@@ -747,13 +652,11 @@ plot(impact_placebo_8)
   
 
 
-# 1. Извлекаем внутреннюю модель BSTS 
+
 bsts_model8 <- impact8$model$bsts.model
 
-# 2. Получаем стандартизированную сводку по модели
 bsts_summary8 <- summary(bsts_model8)
 
-# 3. Извлекаем матрицу с коэффициентами и преобразуем в data.frame
 coefficients_df8 <- as.data.frame(bsts_summary8$coefficients)
 
 colnames(coefficients_df8) <- c(
@@ -764,5 +667,4 @@ colnames(coefficients_df8) <- c(
   "Вероятность включения"
 )
 
-print("--- Апостериорные оценки коэффициентов модели ---")
-print(coefficients_df8)
+coefficients_df8
