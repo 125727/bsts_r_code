@@ -89,7 +89,6 @@ df1 <- df %>%
   )
 
 
-
 # индексация по датам
 ts_data <- zoo(
   # x = df1[, c("cnt_without_payment", "cnt_without_payment_pledged", "key_rate")],
@@ -139,7 +138,6 @@ summary(impact, "report")
 
 #график
 plot(impact)
-
 
 
 # кросс-временная валидация
@@ -228,7 +226,6 @@ best_sd
 best_seas   
     
 
-
 # финальная модель (целевая переменная - конверсия в невыплату)
 ts_data3 <- zoo(
   x = df1[, c("conv", "key_rate", "conv_pledged", 'cnt_apps')],
@@ -238,7 +235,7 @@ ts_data3 <- zoo(
 ts_data3
 
 # модель
-impact3 <- CausalImpact(ts_data3, pre.period, post.period, alpha = 0.1,  model.args = list(niter = 10000, prior.level.sd = 0.1, nseasons = 1))
+impact3 <- CausalImpact(ts_data3, pre.period, post.period, model.args = list(niter = 10000, prior.level.sd = 0.1, nseasons = 1))
 
 
 # результаты модели
@@ -246,7 +243,6 @@ print(summary(impact3))
 summary(impact3, "report")
 
 plot(impact3, metrics = c('original', 'pointwise'))
-
 
 
 # тест Плацебо
@@ -257,7 +253,7 @@ fake_post_period <- as.Date(c("2025-05-12", "2025-08-25"))
 ts_placebo_3 <- window(ts_data3, start = fake_pre_period[1], end = fake_post_period[2])
 
 
-impact_placebo_3 <- CausalImpact(ts_placebo_3, fake_pre_period, fake_post_period, alpha = 0.1, model.args = list(niter = 10000, prior.level.sd = 0.1, nseasons = 1))
+impact_placebo_3 <- CausalImpact(ts_placebo_3, fake_pre_period, fake_post_period, model.args = list(niter = 10000, prior.level.sd = 0.1, nseasons = 1))
 print(summary(impact_placebo_3))
 plot(impact_placebo_3)
 
@@ -270,8 +266,6 @@ colMeans(impact3$model$bsts.model$coefficients)
 residuals(impact3)
 
 acf(residuals(impact3))
-
-
 
 
 # анализ остатков модели
@@ -317,28 +311,22 @@ legend("topright", legend = c("KDE", "N(0,1)", "Hist"),
        fill = c(NA, NA, "steelblue"), border = c(NA, NA, "white"),
        col = c("darkorange", "green3", NA), lwd = c(2, 2, NA), bty = "n", cex = 0.8)
 
-# Normal Q-Q (Квантиль-Квантиль)
+# normal Q-Q
 qqnorm(std_resids, main = "Normal Q-Q", pch = 16, col = "blue", 
        xlab = "Theoretical Quantiles", ylab = "Sample Quantiles")
 qqline(std_resids, col = "red", lwd = 2)
 
-# Коррелограмма (ACF)
+# коррелограмма
 acf(std_resids, main = "Correlogram", xlab = "Lag")
 
-
-# Возвращаем стандартные настройки отображения (1 график на окно)
 par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, oma = c(0, 0, 0, 0))
-
-
-
-
 
 
 
 actuals <- impact3$series$response
 preds <- impact3$series$point.pred
 
-# пре-периодs
+# пре-период
 actuals_pre <- as.numeric(window(actuals, start = pre.period[1], end = pre.period[2]))
 preds_pre <- as.numeric(window(preds, start = pre.period[1], end = pre.period[2]))
 
@@ -359,14 +347,16 @@ quality_metrics_df <- data.frame(
   Value = c(mae_val, rmse_val, mape_val, r_squared)
 )
 
-print(quality_metrics_df)
+quality_metrics_df
 
 
 
+# апостериорные оценки коэффициентов модели
 bsts_model <- impact3$model$bsts.model
 
 bsts_summary <- summary(bsts_model)
 
+# матрица с коэффициентами
 coefficients_df <- as.data.frame(bsts_summary$coefficients)
 
 colnames(coefficients_df) <- c(
@@ -380,18 +370,12 @@ colnames(coefficients_df) <- c(
 coefficients_df
 
 
-
   
   
 
 
-#---- зависимая переменная - утилизации ----
-  
-  
-  
-  
-  
-# конверсия в невыплату с утилизациями в ковариатах
+# проверка гипотезы 2
+# целевая переменная 
 ts_data6 <- zoo(
   x = df1[, c("cnt_utilized", "key_rate", "cnt_utilized_pledged", 'cnt_apps')],
   order.by = df$week_dt
@@ -400,7 +384,7 @@ ts_data6 <- zoo(
 ts_data6
 
 # модель
-impact6 <- CausalImpact(ts_data6, pre.period, post.period, alpha = 0.1,  model.args = list(niter = 10000, prior.level.sd = 0.1, nseasons = 1))
+impact6 <- CausalImpact(ts_data6, pre.period, post.period,  model.args = list(niter = 10000, prior.level.sd = 0.1, nseasons = 1))
 
 
 # результаты модели
@@ -408,9 +392,6 @@ print(summary(impact6))
 summary(impact6, "report")
 
 plot(impact6, metrics = c('original', 'pointwise'))
-
-
-
 
 
 # кросс-временная валидация
@@ -514,7 +495,7 @@ fake_post_period <- as.Date(c("2025-05-12", "2025-08-25"))
 ts_placebo_6 <- window(ts_data6, start = fake_pre_period[1], end = fake_post_period[2])
 
 
-impact_placebo_6 <- CausalImpact(ts_placebo_6, fake_pre_period, fake_post_period, alpha = 0.1, model.args = list(niter = 10000, prior.level.sd = 0.1, nseasons = 1))
+impact_placebo_6 <- CausalImpact(ts_placebo_6, fake_pre_period, fake_post_period, model.args = list(niter = 10000, prior.level.sd = 0.1, nseasons = 1))
 print(summary(impact_placebo_6))
 plot(impact_placebo_6)
 
@@ -550,9 +531,9 @@ print(quality_metrics_df)
 
 
 bsts_model6 <- impact6$model$bsts.model
-
 bsts_summary6 <- summary(bsts_model6)
 
+# матрица с коэффициентами
 coefficients_df6 <- as.data.frame(bsts_summary6$coefficients)
 
 colnames(coefficients_df6) <- c(
@@ -562,15 +543,65 @@ colnames(coefficients_df6) <- c(
   "Условное SD", 
   "Вероятность включения"
 )
+
 coefficients_df6
 
 
 
 
 
+# анализ остатков
+actuals <- impact6$series$response
+preds <- impact6$series$point.pred
+resids_pre <- na.omit(window(actuals - preds, start = pre.period[1], end = pre.period[2]))
+
+std_resids <- resids_pre / sd(resids_pre)
 
 
+# тест Дики-Фуллера (на стационарность)
+adf_result <- adf.test(std_resids, alternative = "stationary")
+adf_result
 
+# тест Стьюдента (на равенство среднего нулю)
+t_result <- t.test(std_resids, mu = 0)
+t_result
+
+# Тест Льюнга-Бокса 
+lb_result <- Box.test(std_resids, type = "Ljung-Box")
+lb_result
+
+
+# графики
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 2), oma = c(2, 2, 2, 2))
+
+# стандартизированные остатки во времени
+plot(std_resids, type = "l", col = "steelblue", lwd = 1.5,
+     main = "Standardized residual", ylab = "", xlab = "Date")
+abline(h = 0, col = "gray", lty = 1) # Линия нуля
+
+# гистограмма и оценка плотности
+hist(std_resids, prob = TRUE, breaks = 15, col = "steelblue", border = "white",
+     main = "Histogram plus estimated density", xlab = "", ylab = "")
+
+lines(density(std_resids), col = "darkorange", lwd = 2)
+
+curve(dnorm(x, mean = 0, sd = 1), add = TRUE, col = "green3", lwd = 2)
+legend("topright", legend = c("KDE", "N(0,1)", "Hist"),
+       fill = c(NA, NA, "steelblue"), border = c(NA, NA, "white"),
+       col = c("darkorange", "green3", NA), lwd = c(2, 2, NA), bty = "n", cex = 0.8)
+
+# Normal Q-Q
+qqnorm(std_resids, main = "Normal Q-Q", pch = 16, col = "blue", 
+       xlab = "Theoretical Quantiles", ylab = "Sample Quantiles")
+qqline(std_resids, col = "red", lwd = 2)
+
+# коррелограмма (ACF)
+acf(std_resids, main = "Correlogram", xlab = "Lag")
+
+par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, oma = c(0, 0, 0, 0))
+
+
+# дополнительная проверка
 # количество заявок на кредит
 ts_data7 <- zoo(
   x = df1[, c("cnt_apps", "key_rate")],
@@ -590,14 +621,11 @@ summary(impact7, "report")
 plot(impact7, metrics = c('original', 'pointwise'))
 
 
-
-
-
-
 bsts_model5 <- impact5$model$bsts.model
 
 bsts_summary5 <- summary(bsts_model5)
 
+# матрица с коэффициентами 
 coefficients_df5 <- as.data.frame(bsts_summary5$coefficients)
 
 colnames(coefficients_df5) <- c(
@@ -614,7 +642,7 @@ coefficients_df5
   
 
 
-# конверсия в невыплату с другими ковариатами
+# расширенная спецификация
 ts_data8 <- zoo(
   # x = df1[, c("cnt_without_payment", "cnt_without_payment_pledged", "key_rate")],
   # x = df1[, c("cnt_without_payment", "cnt_without_payment_pledged")],
@@ -648,23 +676,3 @@ ts_placebo_8 <- window(ts_data8, start = fake_pre_period[1], end = fake_post_per
 impact_placebo_8 <- CausalImpact(ts_placebo_8, fake_pre_period, fake_post_period, alpha = 0.1, model.args = list(niter = 10000, prior.level.sd = 0.1, nseasons = 1))
 print(summary(impact_placebo_8))
 plot(impact_placebo_8)
-
-  
-
-
-
-bsts_model8 <- impact8$model$bsts.model
-
-bsts_summary8 <- summary(bsts_model8)
-
-coefficients_df8 <- as.data.frame(bsts_summary8$coefficients)
-
-colnames(coefficients_df8) <- c(
-  "Безусловное среднее", 
-  "Безусловное SD", 
-  "Условное среднее", 
-  "Условное SD", 
-  "Вероятность включения"
-)
-
-coefficients_df8
